@@ -11,7 +11,7 @@ type Headers map[string]string
 const crlf = "\r\n"
 
 func NewHeaders() Headers {
-	return make(map[string]string)
+	return map[string]string{}
 }
 
 func (h *Headers) Parse(data []byte) (n int, done bool, err error) {
@@ -22,7 +22,8 @@ func (h *Headers) Parse(data []byte) (n int, done bool, err error) {
 	}
 	// clrf at beginning, headers are done
 	if i == 0 {
-		return 0, true, nil
+		//so, the crlf should be consumed...
+		return len(crlf), true, nil
 	}
 
 	rawHeader := strings.Split(string(data), crlf)[0]

@@ -51,7 +51,7 @@ func TestHeaderParse(t *testing.T) {
 	data = []byte("\r\n")
 	n, done, err = headers.Parse(data)
 	require.NoError(t, err)
-	assert.Equal(t, 0, n)
+	assert.Equal(t, 2, n)
 	assert.True(t, done)
 
 	// Test: Invalid character in header key
