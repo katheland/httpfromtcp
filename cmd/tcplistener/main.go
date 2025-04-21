@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"log"
 	"net"
-	"internal/request"
+	"github.com/katheland/httpfromtcp/internal/request"
 )
 
 func main() {
