@@ -44,9 +44,12 @@ func RequestFromReader(reader io.Reader) (*Request, error) {
 		} 
 
 		l, err := reader.Read(buf[readToIndex:])
-		// There's an issue here when the initial buffer size is too big...
 		if err == io.EOF {
 			req.Status = Done
+			// if it doesn't end with the ending crlf then actually send an EOF error
+			if readToIndex != len(crlf) {
+				return nil, err
+			}
 			break
 		}
 		if err != nil {
