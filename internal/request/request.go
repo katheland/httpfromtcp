@@ -5,6 +5,7 @@ import (
 	"strings"
 	"unicode"
 	"fmt"
+	"strconv"
 	"github.com/katheland/httpfromtcp/internal/headers"
 )
 
@@ -16,12 +17,14 @@ type Status int
 const (
 	Initialized Status = iota
 	ParsingHeaders
+	ParsingBody
 	Done
 )
 
 type Request struct {
 	RequestLine RequestLine
 	Headers headers.Headers
+	Body []byte
 	Status Status
 }
 
@@ -32,7 +35,7 @@ type RequestLine struct {
 }
 
 func RequestFromReader(reader io.Reader) (*Request, error) {
-	req := Request{Status: Initialized, Headers: headers.NewHeaders()}
+	req := Request{Status: Initialized, Headers: headers.NewHeaders(), Body: []byte{}}
 	buf := make([]byte, bufferSize, bufferSize)
 	readToIndex := 0
 
@@ -45,11 +48,24 @@ func RequestFromReader(reader io.Reader) (*Request, error) {
 
 		l, err := reader.Read(buf[readToIndex:])
 		if err == io.EOF {
-			req.Status = Done
-			// if it doesn't end with the ending crlf then actually send an EOF error
-			if readToIndex != len(crlf) {
+			if req.Status == ParsingHeaders && readToIndex != len(crlf) {
 				return nil, err
 			}
+			if req.Status == ParsingBody && req.Headers.Get("content-length") != "" {
+				contentLength, err := strconv.Atoi(req.Headers.Get("content-length"))
+				if err != nil {
+					return nil, err
+				}
+				fmt.Println(len(req.Body))
+				fmt.Println(contentLength)
+				if len(req.Body) < contentLength {
+					return nil, fmt.Errorf("Length of body less than content-length")
+				}
+				if len(req.Body) > contentLength {
+					return nil, fmt.Errorf("Length of body greater than content-length")
+				}
+			}
+			req.Status = Done
 			break
 		}
 		if err != nil {
@@ -124,9 +140,26 @@ func (r *Request) parse(data []byte) (int, error) {
 			return 0, err
 		}
 		if done == true {
-			r.Status = Done
+			r.Status = ParsingBody		
 		}
 		return read, nil
+	case ParsingBody:
+		if r.Headers.Get("content-length") == "" {
+			r.Status = Done
+			return 0, nil
+		}
+		r.Body = append(r.Body, data...)
+		contentLength, err := strconv.Atoi(r.Headers.Get("content-length"))
+		if err != nil {
+			return 0, err
+		}
+		if len(r.Body) > contentLength {
+			return 0, fmt.Errorf("Length of body greater than content-length")
+		}
+		if len(r.Body) == contentLength {
+			r.Status = Done
+		}
+		return len(data), nil
 	case Done:
 		return 0, fmt.Errorf("Trying to read data in a done state")
 	default:

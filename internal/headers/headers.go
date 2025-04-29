@@ -52,3 +52,7 @@ func (h *Headers) Parse(data []byte) (n int, done bool, err error) {
 	
 	return len(rawHeader) + len(crlf), false, nil
 }
+
+func (h *Headers) Get(key string) string {
+	return (*h)[strings.ToLower(key)]
+}

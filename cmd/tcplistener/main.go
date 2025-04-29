@@ -29,6 +29,8 @@ func main() {
 		for key, val := range req.Headers {
 			fmt.Println(fmt.Sprintf("- %s: %s", key, val))
 		}
+		fmt.Println("Body:")
+		fmt.Println(string(req.Body))
 		
 		conn.Close()
 	}
