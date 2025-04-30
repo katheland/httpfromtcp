@@ -3,9 +3,9 @@ package server
 import (
 	"sync/atomic"
 	"net"
-	//"fmt"
 	"log"
 	"strconv"
+	"github.com/katheland/httpfromtcp/internal/response"
 )
 
 type Server struct {
@@ -49,15 +49,8 @@ func (s *Server) listen() {
 }
 
 func (s *Server) handle(conn net.Conn) {
-	//fmt.Println("HTTP/1.1 200 OK")
-	//fmt.Println("Content-Type: text/plain")
-	//fmt.Println("\nHello World!")
-
-	conn.Write([]byte("HTTP/1.1 200 OK\r\n"))
-	conn.Write([]byte("Content-Length: 0\r\n"))
-	conn.Write([]byte("Connection: close\r\n"))
-	conn.Write([]byte("Content-Type: text/plain\r\n\r\n"))
-	conn.Write([]byte("Hello World!"))
+	response.WriteStatusLine(conn, 200)
+	response.WriteHeaders(conn, response.GetDefaultHeaders(0))
 
 	conn.Close()
 }
